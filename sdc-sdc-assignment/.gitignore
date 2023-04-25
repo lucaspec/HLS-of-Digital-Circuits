@@ -1,0 +1,14 @@
+a.out
+*.bak
+*.bkb
+*.dot
+*.log
+*.ssa
+*.cfg
+*.s
+*.lp
+*.png
+*.jpg
+*.jpeg
+*.pdf
+__pycache__/
