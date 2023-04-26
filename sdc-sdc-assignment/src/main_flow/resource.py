@@ -127,7 +127,7 @@ class Resources:
 			for resource in self.resource_dic:
 				constraint = self.resource_dic[resource] # number of allowed instances of this resource
 				ordered_op_list = [n for n in ordering_in_bb if n.attr['type'] == resource] # get topological order for a certain op type
-				print(ordered_op_list)
+				#print(ordered_op_list)
 				for i in range(len(ordered_op_list)-constraint):
 					# add resource constraint
 					self.constraint_set.add_constraint({f'sv{ordered_op_list[i]}': 1, f'sv{ordered_op_list[i+constraint]}': -1}, "leq", -1) 

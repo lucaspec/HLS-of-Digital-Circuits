@@ -96,20 +96,29 @@ def main(args):
 		###################### ASAP with RESOURCE CONSTRAINTS ######################
 		# TODO: write your code here
 
-		scheduling_type = "asap"
-		resource_dic = {"mul": 3, "add": 3, "zext": 3} # define resource constraints here
+		# run every combination
+		for nr_mul in range(1,4):
+			for nr_add in range(1,4):
+				for nr_zext in range(1,4):
+					
+					ssa_parser = Parser(path_ssa_example, example_name, log)
 
-		scheduler = Scheduler(ssa_parser, scheduling_type, log = log)
-		resources = Resources(ssa_parser, resource_dic)
+					print(nr_mul, nr_add, nr_zext)
 
-		scheduler.create_scheduling_ilp()
-		ilp, constraints, opt_function = scheduler.get_ilp_tuple()
-		resources.add_resource_constraints(ilp, constraints, opt_function)
+					scheduling_type = "asap"
+					resource_dic = {"mul": nr_mul, "add": nr_add, "zext": nr_zext} # define resource constraints here
 
-		status = scheduler.solve_scheduling_ilp(base_path, example_name)
-		chart_title = "{0} - {1}".format("asap-rc", example_name)
-		scheduler.print_gantt_chart(chart_title, "{0}/{1}/{2}_{1}.pdf".format(base_path, example_name, scheduling_type))
-		scheduler.print_scheduling_summary("{0}/{1}/{2}_{1}.txt".format(base_path, example_name, scheduling_type))
+					scheduler = Scheduler(ssa_parser, scheduling_type, log = log)
+					resources = Resources(ssa_parser, resource_dic)
+
+					scheduler.create_scheduling_ilp()
+					ilp, constraints, opt_function = scheduler.get_ilp_tuple()
+					resources.add_resource_constraints(ilp, constraints, opt_function)
+
+					status = scheduler.solve_scheduling_ilp(base_path, example_name)
+					chart_title = "{0} - {1}".format("asap-rc", example_name)
+					scheduler.print_gantt_chart(chart_title, f"{base_path}/{example_name}/{scheduling_type}_{example_name}_resource_add_{nr_add}_mul_{nr_mul}_zext_{nr_zext}.txt.pdf".format(base_path, example_name, scheduling_type))
+					scheduler.print_scheduling_summary(f"{base_path}/{example_name}/{scheduling_type}_{example_name}_resource_add_{nr_add}_mul_{nr_mul}_zext_{nr_zext}.txt".format(base_path, example_name, scheduling_type))
 
 		###################### ALAP with RESOURCE CONSTRAINTS ######################
 		# TODO: write your code here
@@ -118,40 +127,40 @@ def main(args):
 		###################### ASAP pipelined ######################
 		# TODO: write your code here
 		
-		scheduling_type = "pipelined"
-		scheduler = Scheduler(ssa_parser, scheduling_type, log = log)
-		scheduler.create_scheduling_ilp()
+		# scheduling_type = "pipelined"
+		# scheduler = Scheduler(ssa_parser, scheduling_type, log = log)
+		# scheduler.create_scheduling_ilp()
 
-		II = 0
-		scheduler.set_II_constraints(II)
-		while(scheduler.solve_scheduling_ilp(base_path, example_name) == -1): # check whether schedule is feasible
-			print(f'no feasibible schedule found with II = {II}')
-			II += 1
-			scheduler.set_II_constraints(II) # replace old constraints with new ones
+		# II = 1
+		# scheduler.set_II_constraints(II)
+		# while(scheduler.solve_scheduling_ilp(base_path, example_name) == -1): # check whether schedule is feasible
+		# 	#print(f'no feasibible schedule found with II = {II}')
+		# 	II += 1
+		# 	scheduler.set_II_constraints(II) # replace old constraints with new ones
 
-		print(f'feasibible schedule found with II = {II}! \n')
+		# #print(f'feasibible schedule found with II = {II}! \n')
 
-		chart_title = "{0} - {1}".format("pipelined", example_name)
-		scheduler.print_gantt_chart(chart_title, "{0}/{1}/{2}_{1}.pdf".format(base_path, example_name, scheduling_type))
-		scheduler.print_scheduling_summary("{0}/{1}/{2}_{1}.txt".format(base_path, example_name, scheduling_type))
+		# chart_title = "{0} - {1}".format("pipelined", example_name)
+		# scheduler.print_gantt_chart(chart_title, "{0}/{1}/{2}_{1}.pdf".format(base_path, example_name, scheduling_type))
+		# scheduler.print_scheduling_summary("{0}/{1}/{2}_{1}.txt".format(base_path, example_name, scheduling_type))
 
 		###################### ASAP pipelined resource constrained ######################
 		# TODO: write your code here
-		scheduling_type = "asap"
-		resource_dic = {"mul": 3, "add": 3, "zext": 3} # define resource constraints here
+		# scheduling_type = "pipelined"
+		# resource_dic = {"mul": 3, "add": 3, "zext": 3} # define resource constraints here
 
-		scheduler = Scheduler(ssa_parser, scheduling_type, log = log)
-		resources = Resources(ssa_parser, resource_dic)
+		# scheduler = Scheduler(ssa_parser, scheduling_type, log = log)
+		# resources = Resources(ssa_parser, resource_dic)
 
-		scheduler.create_scheduling_ilp()
-		ilp, constraints, opt_function = scheduler.get_ilp_tuple()
-		resources.add_resource_constraints(ilp, constraints, opt_function)
+		# scheduler.create_scheduling_ilp()
+		# ilp, constraints, opt_function = scheduler.get_ilp_tuple()
+		# resources.add_resource_constraints(ilp, constraints, opt_function)
 
-		status = scheduler.solve_scheduling_ilp(base_path, example_name)
-		chart_title = "{0} - {1}".format("asap-rc", example_name)
-		scheduler.print_gantt_chart(chart_title, "{0}/{1}/{2}_{1}.pdf".format(base_path, example_name, scheduling_type))
-		scheduler.print_scheduling_summary("{0}/{1}/{2}_{1}.txt".format(base_path, example_name, scheduling_type))
-		
+		# status = scheduler.solve_scheduling_ilp(base_path, example_name)
+		# chart_title = "{0} - {1}".format("asap-rc", example_name)
+		# scheduler.print_gantt_chart(chart_title, "{0}/{1}/{2}_{1}.pdf".format(base_path, example_name, scheduling_type))
+		# scheduler.print_scheduling_summary("{0}/{1}/{2}_{1}.txt".format(base_path, example_name, scheduling_type))
+
 
 if __name__ == '__main__':
 	arg_parser = argparse.ArgumentParser(description="Welcome to the SDC project for the Summer Semester 2023!")

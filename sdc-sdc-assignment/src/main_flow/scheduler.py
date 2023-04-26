@@ -95,6 +95,8 @@ class Scheduler:
 		for n in self.cdfg:
 			self.ilp.add_variable(f"sv{n}", lower_bound = 0, var_type = "i")
 
+		self.ilp.add_variable("II", lower_bound = 0, var_type = "i")
+
 
 	# function to set scheduling technique
 	def set_sched_technique(self, technique):
@@ -137,9 +139,13 @@ class Scheduler:
 		# add pipelining constraints
 		self.II = II_value
 		for edge in get_cdfg_edges(self.cdfg):	
-			if edge.attr["style"] == "dashed":
-				self.constraints.add_constraint({f'sv{edge[0]}': 1, f'sv{edge[1]}': -1}, "leq", self.II - get_node_latency(edge[0].attr))
+			if edge.attr["style"] == "dashed" and (edge[0].attr['type'] != 'br' or edge[1].attr['type'] != 'phi'): # backedge from br to phi is not a data dependency
+				self.constraints.add_constraint({f'sv{edge[0]}': 1, f'sv{edge[1]}': -1, 'II': -1}, "leq", -get_node_latency(edge[0].attr))
 				self.remove_buffer.append(len(self.constraints.constraints)) # track added constraints
+
+		# add II constraint
+		self.constraints.add_constraint({'II': 1}, "eq", self.II)
+		self.remove_buffer.append(len(self.constraints.constraints)) # track added constraint
 
 
 	# function to add max_latency constraint and optimization
