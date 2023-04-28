@@ -132,20 +132,21 @@ class Scheduler:
 		# TODO: write your code here
 
 		# remove constraints from previous iteration
-		for id in self.remove_buffer:
-				self.constraints.remove_constraint(f'c{id}')
+		for constraint_id in self.remove_buffer:
+				self.constraints.remove_constraint(constraint_id)
 		self.remove_buffer.clear()
 
 		# add pipelining constraints
 		self.II = II_value
 		for edge in get_cdfg_edges(self.cdfg):	
 			if edge.attr["style"] == "dashed" and (edge[0].attr['type'] != 'br' or edge[1].attr['type'] != 'phi'): # backedge from br to phi is not a data dependency
-				self.constraints.add_constraint({f'sv{edge[0]}': 1, f'sv{edge[1]}': -1, 'II': -1}, "leq", -get_node_latency(edge[0].attr))
-				self.remove_buffer.append(len(self.constraints.constraints)) # track added constraints
+				constraint_id = self.constraints.add_constraint({f'sv{edge[0]}': 1, f'sv{edge[1]}': -1, 'II': -1}, "leq", -get_node_latency(edge[0].attr))
+				self.remove_buffer.append(constraint_id) # track added constraints
 
 		# add II constraint
-		self.constraints.add_constraint({'II': 1}, "eq", self.II)
-		self.remove_buffer.append(len(self.constraints.constraints)) # track added constraint
+		constraint_id = self.constraints.add_constraint({'II': 1}, "eq", self.II)
+		self.remove_buffer.append(constraint_id) # track added constraint
+
 
 
 	# function to add max_latency constraint and optimization

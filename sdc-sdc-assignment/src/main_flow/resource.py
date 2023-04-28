@@ -28,29 +28,50 @@ class MRT: # Modulo Reservation Table (MRT)
 	# function to generate the MRT
 	def generate(self, ilp):
 		# TODO: write your code here
-		loop_latency = ilp.get_max_latency_solution() 
-		for cycle in range(loop_latency+1):
+
+		loop_latency = int(ilp.get_max_latency_solution())
+		print('loop latency = ', loop_latency)
+
+		# initialize dicitionary with empty arrays
+		for cycle in range(loop_latency + 1):
+			self.mrt[cycle] = []
+
+		for cycle in range(loop_latency + 1):
 			# get all scheduled operations in current cycle
-			res = ilp.get_variables_solution(cycle)
+			ops = ilp.get_variables_solution(cycle)
 
-			# populate dictionary and consider this and future loop iterations
-			i = 0
-			while(i < loop_latency):
-				self.mrt.setdefault(cycle + i, [])
-				self.mrt[cycle + i].append(res)
+			# populate dictionary considering this and future loop iterations
+			i = cycle
+			while(i < loop_latency + 1):
+				self.mrt[i].extend(ops)
 
-				i += ilp.II
+				i += ilp.get_II_solution()
+
+		print(f'MRT table: {self.mrt}')
 
 
 	# function to check legal MRT
 	def is_legal(self, operation, clock_time, max_allowed_instances, operations_solved):
 		# TODO: write your code here
 
+		print(operation)
+
 		# list of ops in that cycle
 		ops = self.mrt[clock_time]
+		print(f'ops in cycle {clock_time}: {ops}')
 
+		# only consider type of given operation
+		operations_solved_type = [op for op in operations_solved if op.attr['type'] == operation.attr['type']]
+		print(f'operations_solved_type = {operations_solved_type}')
+
+		# evaluate number of scheduled ops in that cycle 
+		nr_ops = 1
+		for op in ops:
+			if op in operations_solved_type:
+				nr_ops += 1
+		
 		# check if there are more instances of an operation than allowed
-		return len([n for n in ops if n.attr['type'] == operation]) <= max_allowed_instances
+		return nr_ops <= max_allowed_instances
 		
 
 
@@ -141,30 +162,46 @@ class Resources:
 		mrt_class = MRT(self.ilp) # MRT object containing execution cycle of each operation according to ilp solution
 		operations_solved = [] # list of operations for which cycle has been decided
 		constraints_list = [] # list of new constraints added and to remove in case of failure
-		schedQueue = [op for op in mrt_class.mrt]
-		
-		while(len(schedQueue) and budget >= 0):
 
-			operation = schedQueue.pop() # pop resource critical operation
-			sv_operation = self.ilp.get_ilp_solution()[operation] # retrieve starting time of operation
+		ordering = get_topological_order(self.cdfg)
+		schedQueue = [op for op in ordering if op.attr['bbID'] == 'for.body' and op.attr['type'] in self.resource_dic] # initial queue containing all resource constrained operations
+		print('schedQueue: ', schedQueue)
+
+		while(len(schedQueue) and budget >= 0):
 			
+			print(budget)
+
+			operation = schedQueue.pop(0) # pop resource critical operation
+			sv_operation = self.ilp.get_ilp_solution()[f'sv{operation}'] # retrieve starting time of operation
+			print(sv_operation)
+								
 			# check if the operation and its execution time are valid according to resource constraint considering the list of solved operations
 			if mrt_class.is_legal(operation, sv_operation, self.resource_dic[operation.attr['type']], operations_solved):
-				constraint_id = self.constraints_set.add_constraint({f'sv{operation}': 1}, "eq", get_node_latency(operation.attr)) # if operation is legal, execute at precise cycle
+				constraint_id = self.constraint_set.add_constraint({f'sv{operation}': 1}, "eq", sv_operation) # if operation is legal, execute at precise cycle
 				constraints_list.append(constraint_id)
+				print(constraint_id)
 				operations_solved.append(operation)
 			else:
-				constraint_id = self.constraint_set.add_constraint({f'sv{operation}': 1}, "leq", get_node_latency(operation.attr)-1) # if operation cannot be executed this cycle, it should next cycle
+				constraint_id = self.constraint_set.add_constraint({f'sv{operation}': 1}, "geq", sv_operation + 1) # if operation cannot be executed this cycle, it should be scheduled next cycle
 				constraints_list.append(constraint_id)
+				print(constraint_id)
 				self.ilp.set_constraints(self.constraint_set)
 				status = self.ilp.solve_ilp() # compute new solution due to new constraint
-				if status: # check feasibility
-					schedQueue.push(operation)
-					mrt_class.generate(self.ilp) # generate new table for new sched. solution
+				
+				if status == 1: # check feasibility
+					schedQueue.insert(0, operation)
+					print(schedQueue)
+					mrt_class.generate(self.ilp) # generate new table for new scheduling solution
 				else:
-					[self.constraint_set.remove_constraints(constraint_id) for constraint_id in constraints_list]
-					return False # problem unfeasible -> fail
+					for constraint_id in constraints_list: 
+						self.constraint_set.remove_constraint(constraint_id) # since unfeasibile, remove added constraints
+					return False # fail
 			
 			budget -= 1
 		
-		return False if len(schedQueue) else True
+		if len(schedQueue):
+			for constraint_id in constraints_list:
+				self.constraint_set.remove_constraint(constraint_id) # since unfeasibile, remove added constraints
+			return False # fail
+		else:
+			return True # success
