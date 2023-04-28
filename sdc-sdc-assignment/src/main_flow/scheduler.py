@@ -77,18 +77,18 @@ class Scheduler:
 		self.opt_fun = Opt_Function(self.ilp, log=log)
 
 		# This is how you retrieve information
-		for operation_node in get_cdfg_nodes(self.cdfg):
-			print(f'Name of the node: {operation_node}')
-			print(f'Type: {operation_node.attr["type"]}')
-			print(f'Latency: {get_node_latency(operation_node.attr)} \n')
+		# for operation_node in get_cdfg_nodes(self.cdfg):
+		# 	print(f'Name of the node: {operation_node}')
+		# 	print(f'Type: {operation_node.attr["type"]}')
+		# 	print(f'Latency: {get_node_latency(operation_node.attr)} \n')
 
 		# loop through the entire graph, and access attributes of edges
-		for cdfg_edge in get_cdfg_edges(self.cdfg):
-			print(f'For Edge: {cdfg_edge[0]} -> {cdfg_edge[1]}')
-			if cdfg_edge.attr["style"] == "dashed":
-				print('Edge type: back edge. \n')
-			else:
-				print('Edge type: normal edge. \n')
+		# for cdfg_edge in get_cdfg_edges(self.cdfg):
+		# 	print(f'For Edge: {cdfg_edge[0]} -> {cdfg_edge[1]}')
+		# 	if cdfg_edge.attr["style"] == "dashed":
+		# 		print('Edge type: back edge. \n')
+		# 	else:
+		# 		print('Edge type: normal edge. \n')
 
 		# define ilp variable per each node
 		# TODO: write your code here
@@ -118,13 +118,6 @@ class Scheduler:
 			for edge in list_of_edges:
 				if edge[0] in nodes_in_bb and edge[1] in nodes_in_bb and edge.attr["style"] != "dashed": # only consider intra BB and normal edges
 					self.constraints.add_constraint({f'sv{edge[0]}': -1, f'sv{edge[1]}': 1}, "geq", get_node_latency(edge[0].attr)) # add constraint
-
-			# for node in nodes_in_bb:
-			# 	list_of_predecessors = self.cdfg.predecessors(node)
-			# 	for pre in list_of_predecessors:
-			# 		if pre.attr['bbID'] == bb: # only consider predecessors of same BB
-			# 			self.constraints.add_constraint({f'sv{pre}': -1, f'sv{node}': 1}, "geq", get_node_latency(pre.attr)) # add constraint
-
 
 
 	# function for setting the initialization interval to the value II_value
@@ -175,10 +168,6 @@ class Scheduler:
 		list_of_nodes = set(get_cdfg_nodes(self.cdfg))
 		list_of_bbs = set(get_cdfg_nodes(self.cfg))
 
-		for cdfg_edge in get_cdfg_edges(self.cdfg):
-			if cdfg_edge.attr["style"] == "dashed":
-				print(cdfg_edge[0].attr["bbID"])
-
 		for bb in list_of_bbs:
 			# add one supersource and supersink node per BB
 			id = bb.attr["id"]
@@ -224,8 +213,7 @@ class Scheduler:
 
 			# minimize start time of supersink of each BB
 			for node in list_of_nodes: 
-				if node.attr["type"] == 'supersink': # find supersink
-					self.opt_fun.add_variable(f'sv{node}', 1)
+				self.opt_fun.add_variable(f'sv{node}', 1)
 
 		elif self.sched_tech == 'alap':
 			# TODO: write your code here
@@ -238,23 +226,13 @@ class Scheduler:
 		
 		elif self.sched_tech == 'pipelined':
 			# TODO: write your code here
-			# list_of_nodes = set(get_cdfg_nodes(self.cdfg))
-			# list_of_bbs = set(get_cdfg_nodes(self.cfg))
 
-			# for bb in list_of_bbs:
-			# 	if bb == 'for.body': # find loop body BB
-			# 		# minimize start time of loop body BB
-			# 		for node in list_of_nodes: 
-			# 			if node.attr["type"] == 'supersink': # find supersink
-			# 				self.opt_fun.add_variable(f'sv{node}', 1)
-
-			# same as ALAP
+			# same as ASAP
 			list_of_nodes = set(get_cdfg_nodes(self.cdfg))
 
 			# minimize start time of supersink of each BB
 			for node in list_of_nodes: 
-				if node.attr["type"] == 'supersink': # find supersink
-					self.opt_fun.add_variable(f'sv{node}', 1)
+				self.opt_fun.add_variable(f'sv{node}', 1)
 
 		elif self.sched_tech == 'naive':
 			# we minimize the last node in the topological order
